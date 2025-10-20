@@ -3,195 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kalkulator Sure Bet</title>
+<title>Surebet Kalkulator</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #0a0a0a;
-    color: #f5f5f5;
-    margin: 0;
-    padding: 20px;
-  }
-  h1 {
-    text-align: center;
-    color: #FFD700;
-    margin-bottom: 10px;
-  }
-  .container {
-    max-width: 420px;
-    margin: 0 auto;
-    background: #111;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
-  }
-
-  /* elegancki przełącznik */
-  .switcher {
-    display: flex;
-    justify-content: center;
-    margin: 10px 0 20px;
-    background: #1a1a1a;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #333;
-  }
-  .switcher button {
-    flex: 1;
-    background: none;
-    border: none;
-    color: #aaa;
-    padding: 10px 0;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-  .switcher button.active {
-    background: #FFD700;
-    color: #111;
-  }
-
-  .kurs-blok {
-    background: #1a1a1a;
-    padding: 12px;
-    border-radius: 10px;
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .kurs-blok input, .kurs-blok select, #stawka {
-    background: #222;
-    border: 1px solid #333;
-    color: #fff;
-    padding: 10px;
-    border-radius: 8px;
-  }
-  .kurs-blok input { flex: 1; }
-  .kurs-blok select { width: 120px; }
-
-  button.calc {
-    margin-top: 15px;
-    width: 100%;
-    background: #FFD700;
-    border: none;
-    color: #111;
-    font-weight: bold;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  button.calc:hover { background: #ffea00; }
-
-  .result {
-    margin-top: 20px;
-    background: #1a1a1a;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-  }
-  .stawki { margin-top: 10px; text-align: left; }
-  .stawki div { margin-bottom: 6px; }
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #121212;
+        color: #ffffff;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 { text-align:center; margin-bottom:20px; color:#facc15; }
+    .container { max-width: 500px; margin: auto; }
+    label { display:block; margin-top:10px; }
+    input, select { width:100%; padding:8px; margin-top:5px; border-radius:5px; border:none; }
+    button { width:100%; padding:10px; margin-top:15px; background:#facc15; color:#111827; border:none; border-radius:5px; font-weight:bold; cursor:pointer; }
+    table { width:100%; border-collapse: collapse; margin-top:20px; }
+    th, td { padding:8px; text-align:center; border-bottom:1px solid #333; }
+    th { background:#1f2937; }
+    .history-title { margin-top:30px; font-size:18px; color:#facc15; text-align:center; }
 </style>
 </head>
 <body>
-
-<h1>Kalkulator Sure Bet</h1>
-
 <div class="container">
-  <div class="switcher">
-    <button id="btn2" class="active" onclick="zmienZdarzenia(2)">2 zdarzenia</button>
-    <button id="btn3" onclick="zmienZdarzenia(3)">3 zdarzenia</button>
-  </div>
+<h1>Surebet Kalkulator</h1>
 
-  <div id="kursy"></div>
+<label for="numEvents">Liczba zdarzeń:</label>
+<select id="numEvents">
+    <option value="2">2</option>
+    <option value="3">3</option>
+</select>
 
-  <label for="stawka">Całkowita stawka (zł):</label>
-  <input type="number" id="stawka" step="0.01" placeholder="np. 100">
+<div id="eventsContainer"></div>
 
-  <button class="calc" onclick="obliczSurebet()">Oblicz</button>
+<label for="stake">Twoja stawka:</label>
+<input type="number" id="stake" value="100">
 
-  <div class="result" id="wynik">
-    Wpisz kursy i kliknij „Oblicz”.
-  </div>
+<button id="calculateBtn">Oblicz</button>
+
+<div id="result"></div>
+
+<div class="history-title">Historia ostatnich kalkulacji</div>
+<table id="historyTable">
+    <thead>
+        <tr>
+            <th>Zdarzenia</th>
+            <th>Stawka</th>
+            <th>Surebet %</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 </div>
 
 <script>
-let iloscZdarzen = 2;
+const eventsContainer = document.getElementById('eventsContainer');
+const numEventsSelect = document.getElementById('numEvents');
+const stakeInput = document.getElementById('stake');
+const calculateBtn = document.getElementById('calculateBtn');
+const resultDiv = document.getElementById('result');
+const historyTableBody = document.querySelector('#historyTable tbody');
 
-function zmienZdarzenia(n) {
-  iloscZdarzen = n;
-  document.getElementById('btn2').classList.remove('active');
-  document.getElementById('btn3').classList.remove('active');
-  document.getElementById('btn' + n).classList.add('active');
-  stworzKursy();
-}
-
-function stworzKursy() {
-  let html = "";
-  for (let i = 1; i <= iloscZdarzen; i++) {
-    html += `
-      <div class="kurs-blok">
-        <input type="number" id="kurs${i}" step="0.01" placeholder="Kurs ${i} (np. 2.10)">
-        <select id="podatek${i}">
-          <option value="0">Bez podatku</option>
-          <option value="0.12">Z podatkiem 12%</option>
-        </select>
-      </div>
-    `;
-  }
-  document.getElementById("kursy").innerHTML = html;
-}
-stworzKursy();
-
-function obliczSurebet() {
-  const efektywne = [];
-  for (let i = 1; i <= iloscZdarzen; i++) {
-    const kurs = parseFloat(document.getElementById("kurs" + i).value);
-    const podatek = parseFloat(document.getElementById("podatek" + i).value);
-    if (isNaN(kurs)) {
-      document.getElementById("wynik").innerHTML = "⚠️ Wpisz wszystkie kursy.";
-      return;
+function createEventInputs(num) {
+    eventsContainer.innerHTML = '';
+    for (let i = 1; i <= num; i++) {
+        eventsContainer.innerHTML += `
+            <label>Zdarzenie ${i} - kurs:</label>
+            <input type="number" step="0.01" class="odds" placeholder="Kurs">
+            <label>Podatek:</label>
+            <select class="tax">
+                <option value="0">Bez podatku</option>
+                <option value="0.12">12%</option>
+            </select>
+        `;
     }
-    efektywne.push(kurs * (1 - podatek));
-  }
-
-  const suma = efektywne.reduce((a, k) => a + (1 / k), 0);
-  const procent = (suma * 100).toFixed(2);
-  const wynikDiv = document.getElementById("wynik");
-  const stawka = parseFloat(document.getElementById("stawka").value) || 0;
-
-  if (suma < 1) {
-    const profit = ((1 - suma) * 100).toFixed(2);
-    let stawkiHTML = "";
-    if (stawka > 0) {
-      const totalInv = efektywne.reduce((a, k) => a + (1 / k), 0);
-      stawkiHTML = "<div class='stawki'><b>Stawki:</b><br>";
-      for (let i = 0; i < iloscZdarzen; i++) {
-        const stake = (stawka / efektywne[i]) / totalInv;
-        stawkiHTML += `<div>Zdarzenie ${i+1}: ${stake.toFixed(2)} zł</div>`;
-      }
-      stawkiHTML += "</div>";
-    }
-
-    wynikDiv.innerHTML = `
-      ✅ <b>SUREBET!</b><br>
-      Łączny procent: <b>${procent}%</b><br>
-      Zysk: <b>+${profit}%</b><br><br>
-      ${stawkiHTML}
-      <small>Obstaw proporcjonalnie, by zysk był równy.</small>
-    `;
-  } else {
-    const strata = ((suma - 1) * 100).toFixed(2);
-    wynikDiv.innerHTML = `
-      ❌ Brak surebeta.<br>
-      Łączny procent: <b>${procent}%</b><br>
-      Strata: <b>-${strata}%</b>
-    `;
-  }
 }
+
+function loadHistory() {
+    const history = JSON.parse(localStorage.getItem('surebetHistory') || '[]');
+    historyTableBody.innerHTML = '';
+    history.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.events.join(', ')}</td><td>${item.stake}</td><td>${item.surebet.toFixed(2)}%</td>`;
+        historyTableBody.appendChild(tr);
+    });
+}
+
+numEventsSelect.addEventListener('change', () => {
+    createEventInputs(parseInt(numEventsSelect.value));
+});
+calculateBtn.addEventListener('click', () => {
+    const oddsInputs = document.querySelectorAll('.odds');
+    const taxSelects = document.querySelectorAll('.tax');
+    const odds = [];
+    oddsInputs.forEach((input, i) => {
+        let val = parseFloat(input.value);
+        let tax = parseFloat(taxSelects[i].value);
+        if (isNaN(val) || val <= 0) val = 0;
+        odds.push(val * (1 - tax));
+    });
+
+    const sumInverse = odds.reduce((acc, o) => acc + 1/o, 0);
+    const surebetPercent = sumInverse > 0 ? (1 - sumInverse) * 100 : 0;
+
+    const stake = parseFloat(stakeInput.value);
+    const stakesPerEvent = odds.map(o => stake / o / sumInverse);
+
+    let html = `<h2>Wynik</h2>`;
+    html += `<p>Surebet: ${surebetPercent.toFixed(2)}%</p>`;
+    html += '<table><tr><th>Zdarzenie</th><th>Kwota do postawienia</th></tr>';
+    stakesPerEvent.forEach((s, i) => {
+        html += `<tr><td>Zdarzenie ${i+1}</td><td>${s.toFixed(2)}</td></tr>`;
+    });
+    html += '</table>';
+    resultDiv.innerHTML = html;
+
+    // Zapis historii
+    const eventsLabels = Array.from({length: odds.length}, (_, i) => `Zdarzenie ${i+1}`);
+    const history = JSON.parse(localStorage.getItem('surebetHistory') || '[]');
+    history.unshift({ events: eventsLabels, stake: stake, surebet: surebetPercent });
+    if(history.length > 10) history.pop();
+    localStorage.setItem('surebetHistory', JSON.stringify(history));
+    loadHistory();
+});
+
+// Inicjalizacja
+createEventInputs(parseInt(numEventsSelect.value));
+loadHistory();
 </script>
-
 </body>
 </html>
