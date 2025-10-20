@@ -31,28 +31,42 @@ h1 {
     gap: 5px;
     margin-bottom: 15px;
 }
-.button-group button, .tax-buttons button {
+.button-group button {
     flex: 1;
     padding: 12px;
-    border: none;
     border-radius: 10px;
+    border: 2px solid transparent;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
     opacity: 0.9;
 }
 .button-group button.yellow { background:#facc15; color:#000; }
-.tax-buttons button.green { background: #16a34a; color: #fff; }
-.tax-buttons button.red { background: #dc2626; color: #fff; }
-.button-group button.active, .tax-buttons button.active {
-    transform: scale(1.05);
-    opacity: 1;
+.button-group button.active { transform: scale(1.1); opacity: 1; border: 2px solid #aaa; box-shadow:0 0 8px #aaa; }
+.button-group button:hover { transform: scale(1.05); opacity: 1; }
+
+/* Pomniejszone przyciski podatku */
+.tax-buttons button {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.9;
 }
-.button-group button:hover, .tax-buttons button:hover { transform: scale(1.05); opacity: 1; }
+.tax-buttons button.green { background: #16a34a; color:#fff; }
+.tax-buttons button.red { background: #dc2626; color:#fff; }
+.tax-buttons button.active { transform: scale(1.1); opacity: 1; border: 2px solid #aaa; box-shadow:0 0 8px #aaa; }
+.tax-buttons button:hover { transform: scale(1.05); opacity:1; }
+
 label { display:block; margin-top:10px; }
 input { width:100%; padding:10px; margin-top:5px; border-radius:10px; border:none; background:#222; color:#fff; transition: all 0.2s ease;}
 input::placeholder { color:#ccc; }
 input:focus { box-shadow: 0 0 8px #facc15; outline:none; transform: scale(1.02); }
+
 button#calculateBtn {
     width:100%; margin-top:20px;
     background:#facc15; color:#000;
@@ -70,7 +84,7 @@ th { background:#222; }
 .history-title:hover { color:#eab308; }
 .history-container { display:none; margin-top:10px; opacity:0; transform: translateY(-10px); transition: all 0.5s ease;}
 .history-container.show { opacity:1; transform: translateY(0);}
-@media(max-width:500px){ .button-group button, .tax-buttons button { padding:8px; font-size:14px; } }
+@media(max-width:500px){ .button-group button, .tax-buttons button { padding:6px; font-size:13px; } }
 </style>
 </head>
 <body>
@@ -158,6 +172,17 @@ function loadHistory() {
     });
 }
 
+function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        element.textContent = (start + (end - start) * progress).toFixed(2);
+        if (progress < 1) window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+}
+
 calculateBtn.addEventListener('click', () => {
     const oddsInputs = document.querySelectorAll('.odds');
     const odds = [];
@@ -175,9 +200,13 @@ calculateBtn.addEventListener('click', () => {
     let html = `<h2 class="show">Wynik</h2>`;
     html += `<p class="show">Surebet: ${surebetPercent.toFixed(2)}%</p>`;
     html += '<table class="result-table show"><tr><th>Bukmacher</th><th>Kwota do postawienia</th></tr>';
-    stakesPerEvent.forEach((s,i)=>html+=`<tr><td>Bukmacher ${i+1}</td><td>${s.toFixed(2)}</td></tr>`);
+    stakesPerEvent.forEach((s,i)=>html+=`<tr><td>Bukmacher ${i+1}</td><td class="animate" data-value="${s.toFixed(2)}">0.00</td></tr>`);
     html += '</table>';
     resultDiv.innerHTML = html;
+
+    document.querySelectorAll('.animate').forEach(el=>{
+        animateValue(el, 0, parseFloat(el.dataset.value), 1000);
+    });
 
     const eventsLabels = Array.from({length:odds.length},(_,i)=>`Bukmacher ${i+1}`);
     const history = JSON.parse(localStorage.getItem('surebetHistory')||'[]');
