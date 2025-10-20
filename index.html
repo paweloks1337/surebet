@@ -7,14 +7,14 @@
 <style>
 body {
     font-family: Arial, sans-serif;
-    background-color: #000; /* czarne tło */
+    background-color: #000;
     color: #fff;
     margin: 0;
     padding: 20px;
 }
 h1 {
     text-align: center;
-    color: #facc15; /* żółty nagłówek */
+    color: #facc15;
     margin-bottom: 20px;
 }
 .container {
@@ -24,7 +24,10 @@ h1 {
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    transition: transform 0.3s ease;
 }
+.container:hover { transform: translateY(-5px); }
+
 .button-group {
     display: flex;
     justify-content: center;
@@ -34,29 +37,24 @@ h1 {
     flex:1;
     margin: 0 5px;
     padding: 12px;
-    background: #facc15;
-    color: #000;
     border:none;
     border-radius: 10px;
     font-weight:bold;
     cursor:pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
 }
-.button-group button.active {
-    background: #eab308;
-}
-.button-group button:hover { background:#eab308; }
+.button-group button.active { opacity: 0.8; transform: scale(1.05); }
+.button-group button:hover { opacity: 0.9; transform: scale(1.05); }
+
+.green { background: #16a34a; color:#fff; }
+.red { background: #dc2626; color:#fff; }
+.yellow { background:#facc15; color:#000; }
+
 label { display:block; margin-top:10px; }
-input, select {
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    border-radius:10px;
-    border:none;
-    background:#222;
-    color:#fff;
-}
+input { width:100%; padding:10px; margin-top:5px; border-radius:10px; border:none; background:#222; color:#fff; transition: all 0.2s ease;}
 input::placeholder { color:#ccc; }
+input:focus { box-shadow: 0 0 8px #facc15; outline:none; transform: scale(1.02); }
+
 button#calculateBtn {
     width:100%;
     margin-top:20px;
@@ -65,8 +63,10 @@ button#calculateBtn {
     font-weight:bold;
     border-radius:10px;
     padding:12px;
+    transition: all 0.2s ease;
 }
-button#calculateBtn:hover { background:#eab308; }
+button#calculateBtn:hover { background:#eab308; transform: scale(1.03); }
+
 table {
     width:100%;
     border-collapse: collapse;
@@ -74,13 +74,19 @@ table {
     background:#111;
     border-radius:10px;
     overflow:hidden;
+    opacity:0;
+    transform: translateY(-10px);
+    transition: all 0.5s ease;
 }
+table.show { opacity:1; transform: translateY(0); }
+
 th, td {
     padding:10px;
     text-align:center;
     border-bottom:1px solid #333;
 }
 th { background:#222; }
+
 .history-title {
     margin-top:20px;
     font-size:18px;
@@ -88,12 +94,24 @@ th { background:#222; }
     cursor:pointer;
     user-select:none;
     text-align:center;
+    transition: color 0.2s;
 }
-.history-container { display:none; margin-top:10px; }
-.result-table td { color:#fff; }
-@media(max-width:500px){
-    .button-group button { padding:10px; font-size:14px; }
+.history-title:hover { color:#eab308; }
+
+.history-container { 
+    display:none; 
+    margin-top:10px; 
+    opacity:0; 
+    transform: translateY(-10px);
+    transition: all 0.5s ease;
 }
+.history-container.show { opacity:1; transform: translateY(0); }
+
+.tax-buttons { margin-top:5px; display:flex; justify-content:center; gap:5px; }
+.tax-buttons button { transition: all 0.2s ease; }
+.tax-buttons button.active { transform: scale(1.05); }
+.tax-buttons button:hover { transform: scale(1.05); }
+@media(max-width:500px){ .button-group button, .tax-buttons button { padding:8px; font-size:14px; } }
 </style>
 </head>
 <body>
@@ -101,8 +119,8 @@ th { background:#222; }
 <h1>Surebet Kalkulator Premium</h1>
 
 <div class="button-group">
-    <button id="btn2" class="active">2 Bukmacherów</button>
-    <button id="btn3">3 Bukmacherów</button>
+    <button id="btn2" class="yellow active">2 Bukmacherów</button>
+    <button id="btn3" class="yellow">3 Bukmacherów</button>
 </div>
 
 <div id="eventsContainer"></div>
@@ -130,6 +148,7 @@ th { background:#222; }
 </div>
 
 <script>
+// ELEMENTY
 const eventsContainer = document.getElementById('eventsContainer');
 const stakeInput = document.getElementById('stake');
 const calculateBtn = document.getElementById('calculateBtn');
@@ -138,36 +157,40 @@ const historyTableBody = document.querySelector('#historyTable tbody');
 const historyToggle = document.getElementById('historyToggle');
 const historyContainer = document.getElementById('historyContainer');
 
-let numEvents = 2; // domyślnie 2 bukmacherów
+let numEvents = 2;
+let taxes = [];
 
+// FUNKCJE
 function createEventInputs(num) {
     eventsContainer.innerHTML = '';
-    for (let i = 1; i <= num; i++) {
-        eventsContainer.innerHTML += `
-            <label>Bukmacher ${i} - kurs:</label>
+    taxes = Array(num).fill(0);
+    for (let i = 0; i < num; i++) {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label>Bukmacher ${i+1} - kurs:</label>
             <input type="number" step="0.01" class="odds" placeholder="Kurs">
-            <label>Podatek:</label>
-            <select class="tax">
-                <option value="0">Bez podatku</option>
-                <option value="0.12">12%</option>
-            </select>
+            <div class="tax-buttons">
+                <button class="green active" data-index="${i}" data-tax="0">Bez podatku</button>
+                <button class="red" data-index="${i}" data-tax="0.12">Z podatkiem</button>
+            </div>
         `;
+        eventsContainer.appendChild(div);
     }
+
+    const taxBtns = eventsContainer.querySelectorAll('.tax-buttons button');
+    taxBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const index = parseInt(btn.dataset.index);
+            taxes[index] = parseFloat(btn.dataset.tax);
+            btn.parentNode.querySelectorAll('button').forEach(sib => sib.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
 }
 
-// Przełączanie przycisków
-document.getElementById('btn2').addEventListener('click', () => {
-    numEvents = 2;
-    createEventInputs(numEvents);
-    document.getElementById('btn2').classList.add('active');
-    document.getElementById('btn3').classList.remove('active');
-});
-document.getElementById('btn3').addEventListener('click', () => {
-    numEvents = 3;
-    createEventInputs(numEvents);
-    document.getElementById('btn3').classList.add('active');
-    document.getElementById('btn2').classList.remove('active');
-});
+// Wybór liczby bukmacherów
+document.getElementById('btn2').addEventListener('click', () => { numEvents=2; createEventInputs(numEvents); document.getElementById('btn2').classList.add('active'); document.getElementById('btn3').classList.remove('active'); });
+document.getElementById('btn3').addEventListener('click', () => { numEvents=3; createEventInputs(numEvents); document.getElementById('btn3').classList.add('active'); document.getElementById('btn2').classList.remove('active'); });
 
 function loadHistory() {
     const history = JSON.parse(localStorage.getItem('surebetHistory') || '[]');
@@ -181,47 +204,43 @@ function loadHistory() {
 
 calculateBtn.addEventListener('click', () => {
     const oddsInputs = document.querySelectorAll('.odds');
-    const taxSelects = document.querySelectorAll('.tax');
     const odds = [];
     oddsInputs.forEach((input, i) => {
         let val = parseFloat(input.value);
-        let tax = parseFloat(taxSelects[i].value);
-        if (isNaN(val) || val <=0) val = 0;
-        odds.push(val * (1 - tax));
+        if (isNaN(val) || val<=0) val=0;
+        odds.push(val*(1-taxes[i]));
     });
 
-    const sumInverse = odds.reduce((acc, o) => acc + 1/o, 0);
-    const surebetPercent = sumInverse > 0 ? (1 - sumInverse) * 100 : 0;
-
+    const sumInverse = odds.reduce((acc,o)=>acc+1/o,0);
+    const surebetPercent = sumInverse>0 ? (1-sumInverse)*100 :0;
     const stake = parseFloat(stakeInput.value);
-    const stakesPerEvent = odds.map(o => stake / o / sumInverse);
+    const stakesPerEvent = odds.map(o => stake/o/sumInverse);
 
     let html = `<h2>Wynik</h2>`;
     html += `<p>Surebet: ${surebetPercent.toFixed(2)}%</p>`;
-    html += '<table class="result-table"><tr><th>Bukmacher</th><th>Kwota do postawienia</th></tr>';
-    stakesPerEvent.forEach((s, i) => {
-        html += `<tr><td>Bukmacher ${i+1}</td><td>${s.toFixed(2)}</td></tr>`;
-    });
+    html += '<table class="result-table show"><tr><th>Bukmacher</th><th>Kwota do postawienia</th></tr>';
+    stakesPerEvent.forEach((s,i)=>html+=`<tr><td>Bukmacher ${i+1}</td><td>${s.toFixed(2)}</td></tr>`);
     html += '</table>';
     resultDiv.innerHTML = html;
 
-    // Zapis historii
-    const eventsLabels = Array.from({length: odds.length}, (_, i) => `Bukmacher ${i+1}`);
-    const history = JSON.parse(localStorage.getItem('surebetHistory') || '[]');
-    history.unshift({ events: eventsLabels, stake: stake, surebet: surebetPercent });
-    if(history.length > 10) history.pop();
-    localStorage.setItem('surebetHistory', JSON.stringify(history));
+    const eventsLabels = Array.from({length:odds.length},(_,i)=>`Bukmacher ${i+1}`);
+    const history = JSON.parse(localStorage.getItem('surebetHistory')||'[]');
+    history.unshift({events:eventsLabels,stake:stake,surebet:surebetPercent});
+    if(history.length>10) history.pop();
+    localStorage.setItem('surebetHistory',JSON.stringify(history));
     loadHistory();
 });
 
-// Toggle historii
-historyToggle.addEventListener('click', () => {
-    if(historyContainer.style.display === 'none' || historyContainer.style.display === '') {
-        historyContainer.style.display = 'block';
-        historyToggle.textContent = 'Historia ostatnich kalkulacji ▲';
+// Toggle historii z animacją
+historyToggle.addEventListener('click',()=>{
+    if(historyContainer.style.display==='none'||historyContainer.style.display===''){
+        historyContainer.style.display='block';
+        historyContainer.classList.add('show');
+        historyToggle.textContent='Historia ostatnich kalkulacji ▲';
     } else {
-        historyContainer.style.display = 'none';
-        historyToggle.textContent = 'Historia ostatnich kalkulacji ▼';
+        historyContainer.style.display='none';
+        historyContainer.classList.remove('show');
+        historyToggle.textContent='Historia ostatnich kalkulacji ▼';
     }
 });
 
