@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator Sure Bet</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #FFD700;
+    margin-bottom: 10px;
+  }
+  .container {
+    max-width: 420px;
+    margin: 0 auto;
+    background: #111;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+  }
+  label, select, input {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+  }
+  input, select {
+    background: #222;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  button {
+    margin-top: 15px;
+    width: 100%;
+    background: #FFD700;
+    border: none;
+    color: #111;
+    font-weight: bold;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #ffea00;
+  }
+  .result {
+    margin-top: 20px;
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>FORTUNA • Kalkulator Sure Bet</h1>
+
+<div class="container">
+  <label for="typy">Liczba zdarzeń:</label>
+  <select id="typy" onchange="zmienLiczbeZdarzen()">
+    <option value="2">2 zdarzenia</option>
+    <option value="3">3 zdarzenia</option>
+  </select>
+
+  <div id="kursy">
+    <label>Kurs 1:</label>
+    <input type="number" id="kurs1" step="0.01" placeholder="np. 2.10">
+    <label>Kurs 2:</label>
+    <input type="number" id="kurs2" step="0.01" placeholder="np. 1.95">
+  </div>
+
+  <label for="podatek">Podatek bukmachera:</label>
+  <select id="podatek">
+    <option value="0">Bez podatku</option>
+    <option value="0.12">12%</option>
+  </select>
+
+  <button onclick="obliczSurebet()">Oblicz</button>
+
+  <div class="result" id="wynik">
+    Wpisz kursy i kliknij „Oblicz”.
+  </div>
+</div>
+
+<script>
+function zmienLiczbeZdarzen() {
+  const ilosc = document.getElementById("typy").value;
+  const kursyDiv = document.getElementById("kursy");
+  kursyDiv.innerHTML = `
+    <label>Kurs 1:</label>
+    <input type="number" id="kurs1" step="0.01" placeholder="np. 2.10">
+    <label>Kurs 2:</label>
+    <input type="number" id="kurs2" step="0.01" placeholder="np. 1.95">
+  `;
+  if (ilosc == 3) {
+    kursyDiv.innerHTML += `
+      <label>Kurs 3:</label>
+      <input type="number" id="kurs3" step="0.01" placeholder="np. 3.50">
+    `;
+  }
+}
+
+function obliczSurebet() {
+  const ilosc = parseInt(document.getElementById("typy").value);
+  const kursy = [];
+  for (let i = 1; i <= ilosc; i++) {
+    kursy.push(parseFloat(document.getElementById("kurs" + i).value));
+  }
+  const podatek = parseFloat(document.getElementById("podatek").value);
+
+  if (kursy.some(isNaN)) {
+    document.getElementById("wynik").innerHTML = "⚠️ Wpisz wszystkie kursy.";
+    return;
+  }
+
+  // Uwaga: przy podatku kurs efektywny maleje
+  const efektywne = kursy.map(k => k * (1 - podatek));
+
+  const suma = efektywne.reduce((a, k) => a + (1 / k), 0);
+  const surebet = (suma * 100).toFixed(2);
+  const wynikDiv = document.getElementById("wynik");
+
+  if (suma < 1) {
+    const profit = ((1 - suma) * 100).toFixed(2);
+    wynikDiv.innerHTML = `
+      ✅ <b>SUREBET!</b><br>
+      Łączny procent: <b>${surebet}%</b><br>
+      Zysk: <b>+${profit}%</b><br><br>
+      <small>Obstaw proporcjonalnie do odwrotności kursów.</small>
+    `;
+  } else {
+    const strata = ((suma - 1) * 100).toFixed(2);
+    wynikDiv.innerHTML = `
+      ❌ Brak surebeta.<br>
+      Łączny procent: <b>${surebet}%</b><br>
+      Strata: <b>-${strata}%</b>
+    `;
+  }
+}
+</script>
+
+</body>
+</html>
