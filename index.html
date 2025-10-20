@@ -24,93 +24,52 @@ h1 {
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    transition: transform 0.3s ease;
 }
-.container:hover { transform: translateY(-5px); }
-
-.button-group {
+.button-group, .tax-buttons {
     display: flex;
     justify-content: center;
+    gap: 5px;
     margin-bottom: 15px;
 }
-.button-group button {
-    flex:1;
-    margin: 0 5px;
+.button-group button, .tax-buttons button {
+    flex: 1;
     padding: 12px;
-    border:none;
+    border: none;
     border-radius: 10px;
-    font-weight:bold;
-    cursor:pointer;
+    font-weight: bold;
+    cursor: pointer;
     transition: all 0.2s ease;
+    opacity: 0.9;
 }
-.button-group button.active { opacity: 0.8; transform: scale(1.05); }
-.button-group button:hover { opacity: 0.9; transform: scale(1.05); }
-
-.green { background: #16a34a; color:#fff; }
-.red { background: #dc2626; color:#fff; }
-.yellow { background:#facc15; color:#000; }
-
+.button-group button.yellow { background:#facc15; color:#000; }
+.tax-buttons button.green { background: #16a34a; color: #fff; }
+.tax-buttons button.red { background: #dc2626; color: #fff; }
+.button-group button.active, .tax-buttons button.active {
+    transform: scale(1.05);
+    opacity: 1;
+}
+.button-group button:hover, .tax-buttons button:hover { transform: scale(1.05); opacity: 1; }
 label { display:block; margin-top:10px; }
 input { width:100%; padding:10px; margin-top:5px; border-radius:10px; border:none; background:#222; color:#fff; transition: all 0.2s ease;}
 input::placeholder { color:#ccc; }
 input:focus { box-shadow: 0 0 8px #facc15; outline:none; transform: scale(1.02); }
-
 button#calculateBtn {
-    width:100%;
-    margin-top:20px;
-    background:#facc15;
-    color:#000;
-    font-weight:bold;
-    border-radius:10px;
-    padding:12px;
+    width:100%; margin-top:20px;
+    background:#facc15; color:#000;
+    font-weight:bold; border-radius:10px; padding:12px;
     transition: all 0.2s ease;
 }
 button#calculateBtn:hover { background:#eab308; transform: scale(1.03); }
 
-table {
-    width:100%;
-    border-collapse: collapse;
-    margin-top:20px;
-    background:#111;
-    border-radius:10px;
-    overflow:hidden;
-    opacity:0;
-    transform: translateY(-10px);
-    transition: all 0.5s ease;
-}
+table { width:100%; border-collapse: collapse; margin-top:20px; background:#111; border-radius:10px; overflow:hidden; opacity:0; transform: translateY(-10px); transition: all 0.5s ease;}
 table.show { opacity:1; transform: translateY(0); }
-
-th, td {
-    padding:10px;
-    text-align:center;
-    border-bottom:1px solid #333;
-}
+th, td { padding:10px; text-align:center; border-bottom:1px solid #333; }
 th { background:#222; }
 
-.history-title {
-    margin-top:20px;
-    font-size:18px;
-    color:#facc15;
-    cursor:pointer;
-    user-select:none;
-    text-align:center;
-    transition: color 0.2s;
-}
+.history-title { margin-top:20px; font-size:18px; color:#facc15; cursor:pointer; user-select:none; text-align:center; transition: color 0.2s;}
 .history-title:hover { color:#eab308; }
-
-.history-container { 
-    display:none; 
-    margin-top:10px; 
-    opacity:0; 
-    transform: translateY(-10px);
-    transition: all 0.5s ease;
-}
-.history-container.show { opacity:1; transform: translateY(0); }
-
-.tax-buttons { margin-top:5px; display:flex; justify-content:center; gap:5px; }
-.tax-buttons button { transition: all 0.2s ease; }
-.tax-buttons button.active { transform: scale(1.05); }
-.tax-buttons button:hover { transform: scale(1.05); }
+.history-container { display:none; margin-top:10px; opacity:0; transform: translateY(-10px); transition: all 0.5s ease;}
+.history-container.show { opacity:1; transform: translateY(0);}
 @media(max-width:500px){ .button-group button, .tax-buttons button { padding:8px; font-size:14px; } }
 </style>
 </head>
@@ -148,7 +107,6 @@ th { background:#222; }
 </div>
 
 <script>
-// ELEMENTY
 const eventsContainer = document.getElementById('eventsContainer');
 const stakeInput = document.getElementById('stake');
 const calculateBtn = document.getElementById('calculateBtn');
@@ -160,7 +118,6 @@ const historyContainer = document.getElementById('historyContainer');
 let numEvents = 2;
 let taxes = [];
 
-// FUNKCJE
 function createEventInputs(num) {
     eventsContainer.innerHTML = '';
     taxes = Array(num).fill(0);
@@ -188,7 +145,6 @@ function createEventInputs(num) {
     });
 }
 
-// Wybór liczby bukmacherów
 document.getElementById('btn2').addEventListener('click', () => { numEvents=2; createEventInputs(numEvents); document.getElementById('btn2').classList.add('active'); document.getElementById('btn3').classList.remove('active'); });
 document.getElementById('btn3').addEventListener('click', () => { numEvents=3; createEventInputs(numEvents); document.getElementById('btn3').classList.add('active'); document.getElementById('btn2').classList.remove('active'); });
 
@@ -216,8 +172,8 @@ calculateBtn.addEventListener('click', () => {
     const stake = parseFloat(stakeInput.value);
     const stakesPerEvent = odds.map(o => stake/o/sumInverse);
 
-    let html = `<h2>Wynik</h2>`;
-    html += `<p>Surebet: ${surebetPercent.toFixed(2)}%</p>`;
+    let html = `<h2 class="show">Wynik</h2>`;
+    html += `<p class="show">Surebet: ${surebetPercent.toFixed(2)}%</p>`;
     html += '<table class="result-table show"><tr><th>Bukmacher</th><th>Kwota do postawienia</th></tr>';
     stakesPerEvent.forEach((s,i)=>html+=`<tr><td>Bukmacher ${i+1}</td><td>${s.toFixed(2)}</td></tr>`);
     html += '</table>';
@@ -231,20 +187,12 @@ calculateBtn.addEventListener('click', () => {
     loadHistory();
 });
 
-// Toggle historii z animacją
 historyToggle.addEventListener('click',()=>{
-    if(historyContainer.style.display==='none'||historyContainer.style.display===''){
-        historyContainer.style.display='block';
-        historyContainer.classList.add('show');
-        historyToggle.textContent='Historia ostatnich kalkulacji ▲';
-    } else {
-        historyContainer.style.display='none';
-        historyContainer.classList.remove('show');
-        historyToggle.textContent='Historia ostatnich kalkulacji ▼';
-    }
+    historyContainer.classList.toggle('show');
+    historyContainer.style.display = historyContainer.classList.contains('show') ? 'block' : 'none';
+    historyToggle.textContent = historyContainer.classList.contains('show') ? 'Historia ostatnich kalkulacji ▲' : 'Historia ostatnich kalkulacji ▼';
 });
 
-// Inicjalizacja
 createEventInputs(numEvents);
 loadHistory();
 </script>
