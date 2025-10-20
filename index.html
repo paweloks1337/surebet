@@ -58,11 +58,17 @@
     border-radius: 10px;
     text-align: center;
   }
+  .kurs-blok {
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
 
-<h1>FORTUNA • Kalkulator Sure Bet</h1>
+<h1>Kalkulator Sure Bet</h1>
 
 <div class="container">
   <label for="typy">Liczba zdarzeń:</label>
@@ -71,18 +77,7 @@
     <option value="3">3 zdarzenia</option>
   </select>
 
-  <div id="kursy">
-    <label>Kurs 1:</label>
-    <input type="number" id="kurs1" step="0.01" placeholder="np. 2.10">
-    <label>Kurs 2:</label>
-    <input type="number" id="kurs2" step="0.01" placeholder="np. 1.95">
-  </div>
-
-  <label for="podatek">Podatek bukmachera:</label>
-  <select id="podatek">
-    <option value="0">Bez podatku</option>
-    <option value="0.12">12%</option>
-  </select>
+  <div id="kursy"></div>
 
   <button onclick="obliczSurebet()">Oblicz</button>
 
@@ -92,48 +87,55 @@
 </div>
 
 <script>
-function zmienLiczbeZdarzen() {
-  const ilosc = document.getElementById("typy").value;
-  const kursyDiv = document.getElementById("kursy");
-  kursyDiv.innerHTML = `
-    <label>Kurs 1:</label>
-    <input type="number" id="kurs1" step="0.01" placeholder="np. 2.10">
-    <label>Kurs 2:</label>
-    <input type="number" id="kurs2" step="0.01" placeholder="np. 1.95">
-  `;
-  if (ilosc == 3) {
-    kursyDiv.innerHTML += `
-      <label>Kurs 3:</label>
-      <input type="number" id="kurs3" step="0.01" placeholder="np. 3.50">
+function stworzKursy(ilosc) {
+  let html = "";
+  for (let i = 1; i <= ilosc; i++) {
+    html += `
+      <div class="kurs-blok">
+        <label>Kurs ${i}:</label>
+        <input type="number" id="kurs${i}" step="0.01" placeholder="np. 2.10">
+        <label>Podatek bukmachera:</label>
+        <select id="podatek${i}">
+          <option value="0">Bez podatku</option>
+          <option value="0.12">12%</option>
+        </select>
+      </div>
     `;
   }
+  document.getElementById("kursy").innerHTML = html;
 }
+
+function zmienLiczbeZdarzen() {
+  const ilosc = document.getElementById("typy").value;
+  stworzKursy(ilosc);
+}
+
+// Domyślnie 2 kursy na start
+stworzKursy(2);
 
 function obliczSurebet() {
   const ilosc = parseInt(document.getElementById("typy").value);
-  const kursy = [];
+  const efektywne = [];
+
   for (let i = 1; i <= ilosc; i++) {
-    kursy.push(parseFloat(document.getElementById("kurs" + i).value));
+    const kurs = parseFloat(document.getElementById("kurs" + i).value);
+    const podatek = parseFloat(document.getElementById("podatek" + i).value);
+    if (isNaN(kurs)) {
+      document.getElementById("wynik").innerHTML = "⚠️ Wpisz wszystkie kursy.";
+      return;
+    }
+    efektywne.push(kurs * (1 - podatek));
   }
-  const podatek = parseFloat(document.getElementById("podatek").value);
-
-  if (kursy.some(isNaN)) {
-    document.getElementById("wynik").innerHTML = "⚠️ Wpisz wszystkie kursy.";
-    return;
-  }
-
-  // Uwaga: przy podatku kurs efektywny maleje
-  const efektywne = kursy.map(k => k * (1 - podatek));
 
   const suma = efektywne.reduce((a, k) => a + (1 / k), 0);
-  const surebet = (suma * 100).toFixed(2);
+  const procent = (suma * 100).toFixed(2);
   const wynikDiv = document.getElementById("wynik");
 
   if (suma < 1) {
     const profit = ((1 - suma) * 100).toFixed(2);
     wynikDiv.innerHTML = `
       ✅ <b>SUREBET!</b><br>
-      Łączny procent: <b>${surebet}%</b><br>
+      Łączny procent: <b>${procent}%</b><br>
       Zysk: <b>+${profit}%</b><br><br>
       <small>Obstaw proporcjonalnie do odwrotności kursów.</small>
     `;
@@ -141,7 +143,7 @@ function obliczSurebet() {
     const strata = ((suma - 1) * 100).toFixed(2);
     wynikDiv.innerHTML = `
       ❌ Brak surebeta.<br>
-      Łączny procent: <b>${surebet}%</b><br>
+      Łączny procent: <b>${procent}%</b><br>
       Strata: <b>-${strata}%</b>
     `;
   }
