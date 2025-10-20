@@ -25,10 +25,32 @@
     border-radius: 16px;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
   }
-  label {
-    display: block;
-    margin-top: 10px;
+
+  /* elegancki przełącznik */
+  .switcher {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 20px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #333;
   }
+  .switcher button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #aaa;
+    padding: 10px 0;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .switcher button.active {
+    background: #FFD700;
+    color: #111;
+  }
+
   .kurs-blok {
     background: #1a1a1a;
     padding: 12px;
@@ -46,13 +68,10 @@
     padding: 10px;
     border-radius: 8px;
   }
-  .kurs-blok input {
-    flex: 1;
-  }
-  .kurs-blok select {
-    width: 120px;
-  }
-  button {
+  .kurs-blok input { flex: 1; }
+  .kurs-blok select { width: 120px; }
+
+  button.calc {
     margin-top: 15px;
     width: 100%;
     background: #FFD700;
@@ -63,9 +82,8 @@
     border-radius: 8px;
     cursor: pointer;
   }
-  button:hover {
-    background: #ffea00;
-  }
+  button.calc:hover { background: #ffea00; }
+
   .result {
     margin-top: 20px;
     background: #1a1a1a;
@@ -73,13 +91,8 @@
     border-radius: 10px;
     text-align: center;
   }
-  .stawki {
-    margin-top: 10px;
-    text-align: left;
-  }
-  .stawki div {
-    margin-bottom: 6px;
-  }
+  .stawki { margin-top: 10px; text-align: left; }
+  .stawki div { margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -87,18 +100,17 @@
 <h1>Kalkulator Sure Bet</h1>
 
 <div class="container">
-  <label for="typy">Liczba zdarzeń:</label>
-  <select id="typy" onchange="stworzKursy()">
-    <option value="2">2 zdarzenia</option>
-    <option value="3">3 zdarzenia</option>
-  </select>
+  <div class="switcher">
+    <button id="btn2" class="active" onclick="zmienZdarzenia(2)">2 zdarzenia</button>
+    <button id="btn3" onclick="zmienZdarzenia(3)">3 zdarzenia</button>
+  </div>
 
   <div id="kursy"></div>
 
   <label for="stawka">Całkowita stawka (zł):</label>
   <input type="number" id="stawka" step="0.01" placeholder="np. 100">
 
-  <button onclick="obliczSurebet()">Oblicz</button>
+  <button class="calc" onclick="obliczSurebet()">Oblicz</button>
 
   <div class="result" id="wynik">
     Wpisz kursy i kliknij „Oblicz”.
@@ -106,10 +118,19 @@
 </div>
 
 <script>
+let iloscZdarzen = 2;
+
+function zmienZdarzenia(n) {
+  iloscZdarzen = n;
+  document.getElementById('btn2').classList.remove('active');
+  document.getElementById('btn3').classList.remove('active');
+  document.getElementById('btn' + n).classList.add('active');
+  stworzKursy();
+}
+
 function stworzKursy() {
-  const ilosc = parseInt(document.getElementById("typy").value);
   let html = "";
-  for (let i = 1; i <= ilosc; i++) {
+  for (let i = 1; i <= iloscZdarzen; i++) {
     html += `
       <div class="kurs-blok">
         <input type="number" id="kurs${i}" step="0.01" placeholder="Kurs ${i} (np. 2.10)">
@@ -122,40 +143,32 @@ function stworzKursy() {
   }
   document.getElementById("kursy").innerHTML = html;
 }
-
-// domyślnie 2 kursy
 stworzKursy();
 
 function obliczSurebet() {
-  const ilosc = parseInt(document.getElementById("typy").value);
   const efektywne = [];
-  const kursy = [];
-
-  for (let i = 1; i <= ilosc; i++) {
+  for (let i = 1; i <= iloscZdarzen; i++) {
     const kurs = parseFloat(document.getElementById("kurs" + i).value);
     const podatek = parseFloat(document.getElementById("podatek" + i).value);
     if (isNaN(kurs)) {
       document.getElementById("wynik").innerHTML = "⚠️ Wpisz wszystkie kursy.";
       return;
     }
-    const efektywny = kurs * (1 - podatek);
-    efektywne.push(efektywny);
-    kursy.push(kurs);
+    efektywne.push(kurs * (1 - podatek));
   }
 
   const suma = efektywne.reduce((a, k) => a + (1 / k), 0);
   const procent = (suma * 100).toFixed(2);
   const wynikDiv = document.getElementById("wynik");
-
   const stawka = parseFloat(document.getElementById("stawka").value) || 0;
-  let stawkiHTML = "";
 
   if (suma < 1) {
     const profit = ((1 - suma) * 100).toFixed(2);
+    let stawkiHTML = "";
     if (stawka > 0) {
       const totalInv = efektywne.reduce((a, k) => a + (1 / k), 0);
       stawkiHTML = "<div class='stawki'><b>Stawki:</b><br>";
-      for (let i = 0; i < ilosc; i++) {
+      for (let i = 0; i < iloscZdarzen; i++) {
         const stake = (stawka / efektywne[i]) / totalInv;
         stawkiHTML += `<div>Zdarzenie ${i+1}: ${stake.toFixed(2)} zł</div>`;
       }
@@ -166,7 +179,7 @@ function obliczSurebet() {
       ✅ <b>SUREBET!</b><br>
       Łączny procent: <b>${procent}%</b><br>
       Zysk: <b>+${profit}%</b><br><br>
-      ${stawkiHTML || ""}
+      ${stawkiHTML}
       <small>Obstaw proporcjonalnie, by zysk był równy.</small>
     `;
   } else {
