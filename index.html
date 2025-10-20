@@ -25,17 +25,32 @@
     border-radius: 16px;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
   }
-  label, select, input {
+  label {
     display: block;
-    width: 100%;
     margin-top: 10px;
   }
-  input, select {
+  .kurs-blok {
+    background: #1a1a1a;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .kurs-blok input, .kurs-blok select, #stawka {
     background: #222;
     border: 1px solid #333;
     color: #fff;
     padding: 10px;
     border-radius: 8px;
+  }
+  .kurs-blok input {
+    flex: 1;
+  }
+  .kurs-blok select {
+    width: 120px;
   }
   button {
     margin-top: 15px;
@@ -58,11 +73,12 @@
     border-radius: 10px;
     text-align: center;
   }
-  .kurs-blok {
-    background: #1a1a1a;
-    padding: 10px;
-    border-radius: 10px;
+  .stawki {
     margin-top: 10px;
+    text-align: left;
+  }
+  .stawki div {
+    margin-bottom: 6px;
   }
 </style>
 </head>
@@ -72,12 +88,15 @@
 
 <div class="container">
   <label for="typy">Liczba zdarzeń:</label>
-  <select id="typy" onchange="zmienLiczbeZdarzen()">
+  <select id="typy" onchange="stworzKursy()">
     <option value="2">2 zdarzenia</option>
     <option value="3">3 zdarzenia</option>
   </select>
 
   <div id="kursy"></div>
+
+  <label for="stawka">Całkowita stawka (zł):</label>
+  <input type="number" id="stawka" step="0.01" placeholder="np. 100">
 
   <button onclick="obliczSurebet()">Oblicz</button>
 
@@ -87,17 +106,16 @@
 </div>
 
 <script>
-function stworzKursy(ilosc) {
+function stworzKursy() {
+  const ilosc = parseInt(document.getElementById("typy").value);
   let html = "";
   for (let i = 1; i <= ilosc; i++) {
     html += `
       <div class="kurs-blok">
-        <label>Kurs ${i}:</label>
-        <input type="number" id="kurs${i}" step="0.01" placeholder="np. 2.10">
-        <label>Podatek bukmachera:</label>
+        <input type="number" id="kurs${i}" step="0.01" placeholder="Kurs ${i} (np. 2.10)">
         <select id="podatek${i}">
           <option value="0">Bez podatku</option>
-          <option value="0.12">12%</option>
+          <option value="0.12">Z podatkiem 12%</option>
         </select>
       </div>
     `;
@@ -105,17 +123,13 @@ function stworzKursy(ilosc) {
   document.getElementById("kursy").innerHTML = html;
 }
 
-function zmienLiczbeZdarzen() {
-  const ilosc = document.getElementById("typy").value;
-  stworzKursy(ilosc);
-}
-
-// Domyślnie 2 kursy na start
-stworzKursy(2);
+// domyślnie 2 kursy
+stworzKursy();
 
 function obliczSurebet() {
   const ilosc = parseInt(document.getElementById("typy").value);
   const efektywne = [];
+  const kursy = [];
 
   for (let i = 1; i <= ilosc; i++) {
     const kurs = parseFloat(document.getElementById("kurs" + i).value);
@@ -124,20 +138,36 @@ function obliczSurebet() {
       document.getElementById("wynik").innerHTML = "⚠️ Wpisz wszystkie kursy.";
       return;
     }
-    efektywne.push(kurs * (1 - podatek));
+    const efektywny = kurs * (1 - podatek);
+    efektywne.push(efektywny);
+    kursy.push(kurs);
   }
 
   const suma = efektywne.reduce((a, k) => a + (1 / k), 0);
   const procent = (suma * 100).toFixed(2);
   const wynikDiv = document.getElementById("wynik");
 
+  const stawka = parseFloat(document.getElementById("stawka").value) || 0;
+  let stawkiHTML = "";
+
   if (suma < 1) {
     const profit = ((1 - suma) * 100).toFixed(2);
+    if (stawka > 0) {
+      const totalInv = efektywne.reduce((a, k) => a + (1 / k), 0);
+      stawkiHTML = "<div class='stawki'><b>Stawki:</b><br>";
+      for (let i = 0; i < ilosc; i++) {
+        const stake = (stawka / efektywne[i]) / totalInv;
+        stawkiHTML += `<div>Zdarzenie ${i+1}: ${stake.toFixed(2)} zł</div>`;
+      }
+      stawkiHTML += "</div>";
+    }
+
     wynikDiv.innerHTML = `
       ✅ <b>SUREBET!</b><br>
       Łączny procent: <b>${procent}%</b><br>
       Zysk: <b>+${profit}%</b><br><br>
-      <small>Obstaw proporcjonalnie do odwrotności kursów.</small>
+      ${stawkiHTML || ""}
+      <small>Obstaw proporcjonalnie, by zysk był równy.</small>
     `;
   } else {
     const strata = ((suma - 1) * 100).toFixed(2);
