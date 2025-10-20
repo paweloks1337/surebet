@@ -5,22 +5,82 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Surebet Kalkulator</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #121212;
-        color: #ffffff;
-        margin: 0;
-        padding: 20px;
-    }
-    h1 { text-align:center; margin-bottom:20px; color:#facc15; }
-    .container { max-width: 500px; margin: auto; }
-    label { display:block; margin-top:10px; }
-    input, select { width:100%; padding:8px; margin-top:5px; border-radius:5px; border:none; }
-    button { width:100%; padding:10px; margin-top:15px; background:#facc15; color:#111827; border:none; border-radius:5px; font-weight:bold; cursor:pointer; }
-    table { width:100%; border-collapse: collapse; margin-top:20px; }
-    th, td { padding:8px; text-align:center; border-bottom:1px solid #333; }
-    th { background:#1f2937; }
-    .history-title { margin-top:30px; font-size:18px; color:#facc15; text-align:center; }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #111827; /* ciemne tło */
+    color: #f9fafb; /* jasny tekst */
+    margin: 0;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+    color: #facc15; /* żółty nagłówek */
+    margin-bottom: 20px;
+}
+.container {
+    max-width: 500px;
+    margin: auto;
+    background: #1f2937; /* ciemniejszy panel */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+label {
+    display: block;
+    margin-top: 10px;
+}
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 8px;
+    border: none;
+    background: #374151;
+    color: #f9fafb;
+}
+input::placeholder {
+    color: #d1d5db;
+}
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    background: #facc15;
+    color: #111827;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+button:hover {
+    background: #eab308;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #1f2937;
+    border-radius: 8px;
+    overflow: hidden;
+}
+th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #374151;
+}
+th {
+    background: #374151;
+}
+.history-title {
+    margin-top: 30px;
+    font-size: 18px;
+    color: #facc15;
+    text-align: center;
+}
+.result-table td {
+    color: #f9fafb;
+}
 </style>
 </head>
 <body>
@@ -36,7 +96,7 @@
 <div id="eventsContainer"></div>
 
 <label for="stake">Twoja stawka:</label>
-<input type="number" id="stake" value="100">
+<input type="number" id="stake" value="100" placeholder="Wpisz stawkę">
 
 <button id="calculateBtn">Oblicz</button>
 
@@ -110,7 +170,7 @@ calculateBtn.addEventListener('click', () => {
 
     let html = `<h2>Wynik</h2>`;
     html += `<p>Surebet: ${surebetPercent.toFixed(2)}%</p>`;
-    html += '<table><tr><th>Zdarzenie</th><th>Kwota do postawienia</th></tr>';
+    html += '<table class="result-table"><tr><th>Zdarzenie</th><th>Kwota do postawienia</th></tr>';
     stakesPerEvent.forEach((s, i) => {
         html += `<tr><td>Zdarzenie ${i+1}</td><td>${s.toFixed(2)}</td></tr>`;
     });
